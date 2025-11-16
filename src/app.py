@@ -117,6 +117,16 @@ async def check(uuid, username):
 
 @app.before_serving
 async def create_runtime():
+    GlobalStats.load_stats()
     User.load_users()
-    print(f"[GDA] Loaded {len(User.ALL)} users")
+    Player.load_players()
+    print(f"[GDA] Loaded {len(User.ALL)} users, {len(Player.ALL)} players")
     print("[GDA] Runtime created")
+
+@app.after_serving
+async def destroy_runtime():
+    print("[GDA] Destroying runtime...")
+    User.save_users()
+    GlobalStats.save_stats()
+    Player.save_players()
+    print("[GDA] Shutdown!")

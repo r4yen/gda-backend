@@ -1,7 +1,13 @@
 from __future__ import annotations
+from enum import Enum
 from typing import Dict, List
 import json
 import os
+
+class PlayerInferState(Enum):
+    INFER = 0
+    ALLOWLIST = 1
+    BLOCKLIST = 2
 
 class GlobalStats:
     STATS_FILE = "/app/config/global_stats.json"
@@ -32,6 +38,58 @@ class GlobalStats:
             "cost": cls.total_cost,
         }
         with open(cls.STATS_FILE, "w") as f:
+            json.dump(data, f)
+
+class Player:
+    PLAYER_STORAGE = "/app/config/players.json"
+    ALL: Dict[str, Player] = {}
+
+    uuid: str
+    last_name: str
+
+    infer_state: int
+    language: str
+    cooldown_since: int
+
+    banned: bool
+    last_ban_check: int
+
+    def __init__(self, uuid: str, profile) -> None:
+        self.uuid = uuid
+        self.last_name = profile.get("last_name", "")
+        self.infer_state = profile.get("infer_state", PlayerInferState.INFER)
+        self.language = profile.get("language", "unknown")
+        self.cooldown_since = profile.get("cooldown_since", 0)
+        self.banned = profile.get("banned", False)
+        self.last_ban_check = profile.get("last_ban_check", 0)
+
+    def dump(self):
+        return {
+            "last_name": self.last_name,
+            "infer_state": self.infer_state,
+            "language": self.language,
+            "cooldown_since": self.cooldown_since,
+            "banned": self.banned,
+            "last_ban_check": self.last_ban_check,
+        }
+
+    @classmethod
+    def load_players(cls) -> None:
+        if not os.path.exists(cls.PLAYER_STORAGE):
+            cls.save_players()
+        else:
+            with open(cls.PLAYER_STORAGE, "r") as f:
+                data = json.load(f)
+                cls.ALL = {}
+                for uuid, prof in data.items():
+                    cls.ALL[uuid] = Player(uuid, prof)
+
+    @classmethod
+    def save_players(cls) -> None:
+        data = {}
+        for uuid, player in cls.ALL.items():
+            data[uuid] = player.dump()
+        with open(cls.PLAYER_STORAGE, "w") as f:
             json.dump(data, f)
 
 class User:
