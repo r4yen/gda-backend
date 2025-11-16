@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List
+from typing import Dict, List
 import json
 import os
 
@@ -33,6 +33,17 @@ class GlobalStats:
         }
         with open(cls.STATS_FILE, "w") as f:
             json.dump(data, f)
+
+class Player:
+    PLAYER_STORAGE = "/app/config/players.json"
+    ALL: Dict[str, Player] = {}
+
+    uuid: str
+    last_name: str
+
+    blacklisted: bool
+    banned: bool
+    last_ban_check: int
 
 class User:
     USERS_FILE = "/app/config/users.json"
