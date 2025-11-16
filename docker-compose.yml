@@ -1,0 +1,16 @@
+services:
+  api:
+    container_name: goodzauto
+    image: goodzauto:latest
+    restart: unless-stopped
+    volumes:
+    - ./config:/app/config
+    - ./src:/app/src:ro
+    networks:
+    - nginx_proxy
+    stop_grace_period: 2m
+    environment:
+    - PYTHONUNBUFFERED=1
+networks:
+  nginx_proxy:
+    external: true
