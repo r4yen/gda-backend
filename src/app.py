@@ -56,9 +56,9 @@ def stats():
         },
     })
 
-@app.route("/check/<username>")
+@app.route("/check/<uuid>/<username>")
 @check_permissions()
-def check(username):
+def check(uuid, username):
     if username == "TheRat":
         return jsonify({
             "language": {
