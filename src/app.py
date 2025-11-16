@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from model import User
+from model import GlobalStats, User
 import json
 import os
 
@@ -48,11 +48,11 @@ def stats():
         },
         "global": {
             "checks": {
-                "total": 54321,
-                "german": 42069,
-                "banned": 1337,
+                "total": GlobalStats.total_checks,
+                "german": GlobalStats.total_german,
+                "banned": GlobalStats.total_banned,
             },
-            "cost": 1000000000,
+            "cost": GlobalStats.total_cost,
         },
     })
 

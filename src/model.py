@@ -3,6 +3,37 @@ from typing import List
 import json
 import os
 
+class GlobalStats:
+    STATS_FILE = "/app/config/global_stats.json"
+
+    total_checks: int = 0
+    total_german: int = 0
+    total_banned: int = 0
+    total_cost: int = 0
+
+    @classmethod
+    def load_stats(cls) -> None:
+        if not os.path.exists(cls.STATS_FILE):
+            cls.save_stats()
+        else:
+            with open(cls.STATS_FILE, "r") as f:
+                data = json.load(f)
+                cls.total_checks = data.get("checks", 0)
+                cls.total_german = data.get("german", 0)
+                cls.total_banned = data.get("banned", 0)
+                cls.total_cost = data.get("cost", 0)
+
+    @classmethod
+    def save_stats(cls) -> None:
+        data = {
+            "checks": cls.total_checks,
+            "german": cls.total_german,
+            "banned": cls.total_banned,
+            "cost": cls.total_cost,
+        }
+        with open(cls.STATS_FILE, "w") as f:
+            json.dump(data, f)
+
 class User:
     USERS_FILE = "/app/config/users.json"
     ALL: List[User] = []
