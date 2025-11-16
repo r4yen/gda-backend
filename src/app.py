@@ -32,18 +32,28 @@ def index():
 @app.route("/whoami")
 @check_permissions()
 def whoami():
-    return jsonify(request.user.dump())
+    return jsonify(request.user.dump(include_secrets=False))
 
 @app.route("/stats")
 @check_permissions()
 def stats():
     return jsonify({
-        "checks": {
-            "total": 12345,
-            "german": 420,
-            "banned": 69,
+        "personal": {
+            "checks": {
+                "total": request.user.total_checks,
+                "german": request.user.total_german,
+                "banned": request.user.total_banned,
+            },
+            "cost": request.user.total_cost,
         },
-        "cost": 1337,
+        "global": {
+            "checks": {
+                "total": 54321,
+                "german": 42069,
+                "banned": 1337,
+            },
+            "cost": 1000000000,
+        },
     })
 
 @app.route("/check/<username>")

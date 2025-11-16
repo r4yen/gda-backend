@@ -11,16 +11,38 @@ class User:
     perms: List[str]
     key: str
 
-    def __init__(self, name: str, profile) -> None:
-        self.name = name
+    total_checks: int
+    total_german: int
+    total_banned: int
+    total_cost: int
+
+    def __init__(self, profile) -> None:
+        self.name = profile.get("name", "<unknown>")
         self.perms = profile.get("permissions", [])
         self.key = profile.get("key", "")
+        stats = profile.get("stats", {})
+        self.total_checks = stats.get("checks", 0)
+        self.total_german = stats.get("german", 0)
+        self.total_banned = stats.get("banned", 0)
+        self.total_cost = stats.get("cost", 0)
 
     def has_perm(self, needed: str) -> bool:
         return needed in self.perms
 
-    def dump(self):
-        return {"name": self.name, "perms": self.perms, "key": "<secret>"}
+    def dump(self, include_secrets: bool):
+        res = {
+            "name": self.name,
+            "permissions": self.perms,
+            "stats": {
+                "checks": self.total_checks,
+                "german": self.total_german,
+                "banned": self.total_banned,
+                "cost": self.total_cost,
+            },
+        }
+        if include_secrets:
+            res["key"] = self.key
+        return res
 
     @classmethod
     def load_users(cls) -> None:
@@ -29,5 +51,13 @@ class User:
         with open(cls.USERS_FILE, "r") as f:
             data = json.load(f)
             cls.ALL = []
-            for name, prof in data.items():
-                cls.ALL.append(User(name, prof))
+            for prof in data:
+                cls.ALL.append(User(prof))
+
+    @classmethod
+    def save_users(cls) -> None:
+        data = []
+        for user in cls.ALL:
+            data.append(user.dump(include_secrets=True))
+        with open(cls.USERS_FILE, "w") as f:
+            json.dump(data, f)
