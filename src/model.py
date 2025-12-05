@@ -4,6 +4,28 @@ from typing import Dict, List
 import json
 import os
 
+class Config:
+    CONFIG_FILE = "/app/config/config.secret.json"
+
+    ban_api: str = "https://api.example.com/check/"
+
+    @classmethod
+    def load(cls) -> None:
+        if not os.path.exists(cls.CONFIG_FILE):
+            cls.save()
+        else:
+            with open(cls.CONFIG_FILE, "r") as f:
+                data = json.load(f)
+                cls.ban_api = data.get("ban_api", "")
+
+    @classmethod
+    def save(cls) -> None:
+        data = {
+            "ban_api": cls.ban_api,
+        }
+        with open(cls.CONFIG_FILE, "w") as f:
+            json.dump(data, f)
+
 class PlayerInferState(Enum):
     INFER = 0
     ALLOWLIST = 1
@@ -52,6 +74,7 @@ class Player:
     infer_reason: str
     cooldown_since: int
 
+    # Only used for preventing double-counting of stats
     was_banned: bool
 
     def __init__(self, uuid: str, profile) -> None:
@@ -72,17 +95,20 @@ class Player:
             return "infer"
 
     async def is_banned(self, checker: User) -> bool:
-        # TODO update was_banned and stats accordingly
-        pass # TODO
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{Config.ban_api}{self.uuid}") as resp:
+                data = await resp.json()
+        if data != []:
+            if not self.was_banned:
+                GlobalStats.total_banned += 1
+                checker.total_banned += 1
+            self.was_banned = True
+            return True
+        return False
 
     async def infer_language(self, checker: User) -> None:
         # TODO inc global stats & user stats
-        # TODO save
         pass # TODO
-
-    def set_cooldown(self, cd: int) -> None:
-        self.cooldown_since = cd
-        # TODO save
 
     def dump(self):
         return {

@@ -1,5 +1,5 @@
 from quart import Quart, g, jsonify, request
-from model import GlobalStats, Player, PlayerInferState, User
+from model import Config, GlobalStats, Player, PlayerInferState, User
 import json
 import os
 import time
@@ -72,14 +72,20 @@ async def check(uuid, username):
     if uuid in Player.ALL:
         player = Player.ALL[uuid]
         if player.last_name != username:
+            print(f"[GDA] {uuid} ({username}): Old name {player.last_name}")
             player.last_name = username
             await player.infer_language(g.user)
     else:
+        print(f"[GDA] {uuid} ({username}): First check")
+        GlobalStats.total_checks += 1
+        g.user.total_checks += 1
+
         player = Player(uuid, {"last_name": username})
         Player.ALL[uuid] = player
         await player.infer_language(g.user)
 
     if player.language != "german":
+        print(f"[GDA] {uuid} ({username}): Non-German: {player.language}")
         return jsonify({
             "language": {
                 "verdict": player.language,
@@ -88,7 +94,16 @@ async def check(uuid, username):
             },
         })
 
-    if await player.is_banned(g.user):
+    try:
+        is_banned = await player.is_banned(g.user)
+    except Exception as e:
+        print(f"[GDA] Error checking ban status for {username}: {e}")
+        return jsonify({
+            "error": "500",
+            "message": "Could not check ban status",
+        }), 500
+    if is_banned:
+        print(f"[GDA] {uuid} ({username}): Banned")
         return jsonify({
             "language": {
                 "verdict": player.language,
@@ -100,6 +115,7 @@ async def check(uuid, username):
 
     now = int(time.time())
     if now - player.cooldown_since < COOLDOWN_TIME:
+        print(f"[GDA] {uuid} ({username}): On Cooldown")
         return jsonify({
             "language": {
                 "verdict": player.language,
@@ -109,7 +125,9 @@ async def check(uuid, username):
             "banned": False,
             "cooldown": player.cooldown_since + COOLDOWN_TIME - now,
         })
-    player.set_cooldown(now)
+    player.cooldown_since = now
+
+    print(f"[GDA] {uuid} ({username}): OK")
     return jsonify({
             "language": {
                 "verdict": player.language,
@@ -122,6 +140,7 @@ async def check(uuid, username):
 
 @app.before_serving
 async def create_runtime():
+    Config.load()
     GlobalStats.load_stats()
     User.load_users()
     Player.load_players()
