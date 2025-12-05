@@ -130,7 +130,7 @@ class Player:
             "model": "gpt-4.1-nano",
             "messages": [{
                 "role": "user",
-                "content": f"You are given the user name '{self.last_name}'. Determine the language the user name is written in, formatted like e.g. 'dutch | <reasoning>'. Give a very short reason for the decision in german. If the language cannot be determined with high confidence, output only 'unknown'.",
+                "content": f"You are given the user name '{self.last_name}'. Determine the language the user name is written in, with the english name of the language formatted like e.g. `dutch | <reason>`. Give a very short reason for the decision in german. If the language cannot be determined with high confidence, output only `unknown`.",
             }],
             "temperature": 0,
         }
