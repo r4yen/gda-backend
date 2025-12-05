@@ -66,13 +66,65 @@ async def stats():
         },
     })
 
+@app.post("/allowlist/<uuid>/<username>")
+@check_permissions("allowlist")
+async def allowlist(uuid, username):
+    uuid = uuid.replace("-", "").lower()
+    if len(uuid) != 32 or len(username) < 2 or len(username) > 16:
+        return jsonify({
+            "error": 400,
+            "message": "invalid uuid/username",
+        }), 400
+
+    reason = await request.get_data()
+    reason = reason.decode("utf-8").strip()[:128]
+
+    if uuid in Player.ALL:
+        player = Player.ALL[uuid]
+        player.last_name = username
+    else:
+        player = Player(uuid, {"last_name": username})
+        Player.ALL[uuid] = player
+
+    player.infer_state = PlayerInferState.ALLOWLIST
+    player.language = "german"
+    player.infer_reason = reason
+    print(f"[GDA] {uuid} ({username}): Added to allow list: '{reason}'")
+    return jsonify({"success": True})
+
+@app.post("/blocklist/<uuid>/<username>")
+@check_permissions("blocklist")
+async def blocklist(uuid, username):
+    uuid = uuid.replace("-", "").lower()
+    if len(uuid) != 32 or len(username) < 2 or len(username) > 16:
+        return jsonify({
+            "error": 400,
+            "message": "invalid uuid/username",
+        }), 400
+
+    reason = await request.get_data()
+    reason = reason.decode("utf-8").strip()[:128]
+
+    if uuid in Player.ALL:
+        player = Player.ALL[uuid]
+        player.last_name = username
+    else:
+        player = Player(uuid, {"last_name": username})
+        Player.ALL[uuid] = player
+
+    player.infer_state = PlayerInferState.BLOCKLIST
+    player.language = "unknown"
+    player.infer_reason = reason
+    print(f"[GDA] {uuid} ({username}): Added to block list: '{reason}'")
+    return jsonify({"success": True})
+
 @app.route("/check/<uuid>/<username>")
 @check_permissions()
 async def check(uuid, username):
     uuid = uuid.replace("-", "").lower()
     if len(uuid) != 32 or len(username) < 2 or len(username) > 16:
         return jsonify({
-            "error": "400",
+            "error": 400,
             "message": "invalid uuid/username",
         }), 400
 
@@ -86,7 +138,7 @@ async def check(uuid, username):
             except Exception as e:
                 print(f"[GDA] Error inferring language for {username}: {e}")
                 return jsonify({
-                    "error": "500",
+                    "error": 500,
                     "message": "Could not infer language",
                 }), 500
     else:
@@ -101,7 +153,7 @@ async def check(uuid, username):
         except Exception as e:
             print(f"[GDA] Error inferring language for {username}: {e}")
             return jsonify({
-                "error": "500",
+                "error": 500,
                 "message": "Could not infer language",
             }), 500
 
@@ -120,7 +172,7 @@ async def check(uuid, username):
     except Exception as e:
         print(f"[GDA] Error checking ban status for {username}: {e}")
         return jsonify({
-            "error": "500",
+            "error": 500,
             "message": "Could not check ban status",
         }), 500
     if is_banned:
