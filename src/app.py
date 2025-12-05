@@ -6,8 +6,8 @@ import time
 
 app = Quart(__name__)
 
-# COOLDOWN_TIME = 12 * 60 * 60  # 12 hours
-COOLDOWN_TIME = 10 * 60  # 10 minutes (for testing)
+COOLDOWN_TIME = 12 * 60 * 60  # 12 hours
+# COOLDOWN_TIME = 10 * 60  # 10 minutes (for testing)
 
 # Enforce only one worker
 worker_count = os.environ.get("HYPERCORN_WORKER_ID")
