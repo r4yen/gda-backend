@@ -163,8 +163,8 @@ async def check(uuid, username):
 async def create_runtime():
     Config.load()
     GlobalStats.load_stats()
-    User.load_users()
     Player.load_players()
+    User.load_users()
     print(f"[GDA] Loaded {len(User.ALL)} users, {len(Player.ALL)} players")
     print("[GDA] Runtime created")
 
@@ -172,6 +172,7 @@ async def create_runtime():
 async def destroy_runtime():
     print("[GDA] Destroying runtime...")
     User.save_users()
-    GlobalStats.save_stats()
     Player.save_players()
+    GlobalStats.save_stats()
+    Config.save()
     print("[GDA] Shutdown!")

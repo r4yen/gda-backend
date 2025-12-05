@@ -36,7 +36,7 @@ class Config:
             "open_ai_key": cls.open_ai_key,
         }
         with open(cls.CONFIG_FILE, "w") as f:
-            json.dump(data, f)
+            json.dump(data, f, indent=2, sort_keys=True)
 
 class PlayerInferState:
     INFER = 0
@@ -72,7 +72,7 @@ class GlobalStats:
             "cost": cls.total_cost,
         }
         with open(cls.STATS_FILE, "w") as f:
-            json.dump(data, f)
+            json.dump(data, f, indent=2, sort_keys=True)
 
 class Player:
     PLAYER_STORAGE = "/app/config/players.json"
@@ -188,7 +188,7 @@ class Player:
         for uuid, player in cls.ALL.items():
             data[uuid] = player.dump()
         with open(cls.PLAYER_STORAGE, "w") as f:
-            json.dump(data, f)
+            json.dump(data, f, indent=2, sort_keys=True)
 
 class User:
     USERS_FILE = "/app/config/users.json"
@@ -247,4 +247,4 @@ class User:
         for user in cls.ALL:
             data.append(user.dump(include_secrets=True))
         with open(cls.USERS_FILE, "w") as f:
-            json.dump(data, f)
+            json.dump(data, f, indent=2, sort_keys=True)
