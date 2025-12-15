@@ -76,6 +76,7 @@ async def stats():
                 "banned": GlobalStats.total_banned,
             },
             "cost": GlobalStats.total_cost,
+            "players": len(Player.ALL),
         },
     })
 
