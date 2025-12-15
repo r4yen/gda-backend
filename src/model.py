@@ -195,8 +195,15 @@ class User:
     ALL: List[User] = []
 
     name: str
+    # Supported perms:
+    # allowlist         - manage allowlist
+    # blocklist         - manage blocklist
+    # manage_users      - manage API users
+    # manage_all_guilds - no same-guild checks are performed
     perms: List[str]
     key: str
+    guild: int
+    enabled: bool
 
     total_checks: int
     total_german: int
@@ -207,6 +214,8 @@ class User:
         self.name = profile.get("name", "<unknown>")
         self.perms = profile.get("permissions", [])
         self.key = profile.get("key", "")
+        self.guild = profile.get("guild", -1)
+        self.enabled = profile.get("enabled", True)
         stats = profile.get("stats", {})
         self.total_checks = stats.get("checks", 0)
         self.total_german = stats.get("german", 0)
@@ -220,6 +229,8 @@ class User:
         res = {
             "name": self.name,
             "permissions": self.perms,
+            "guild": self.guild,
+            "enabled": self.enabled,
             "stats": {
                 "checks": self.total_checks,
                 "german": self.total_german,

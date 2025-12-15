@@ -3,6 +3,7 @@ from model import Config, GlobalStats, Player, PlayerInferState, User
 import json
 import os
 import time
+import uuid
 
 app = Quart(__name__)
 
@@ -22,7 +23,7 @@ def check_permissions(*perms):
             if not key:
                 return jsonify({"error": 401, "message": "unauthorized (api key missing)"}), 401
             for user in User.ALL:
-                if user.key == key:
+                if user.key == key and user.enabled:
                     break
             else:
                 return jsonify({"error": 401, "message": "unauthorized"}), 401
@@ -78,12 +79,90 @@ async def stats():
         },
     })
 
+@app.route("/users")
+@check_permissions("manage_users")
+async def get_users():
+    result = {}
+    can_manage_all = g.user.has_perm("manage_all_guilds")
+    for user in User.ALL:
+        if can_manage_all or user.guild == g.user.guild:
+            result[user.name] = user.dump(False)
+    return jsonify(result)
+
+@app.put("/users/<name>")
+@check_permissions("manage_users")
+async def put_user(name):
+    try:
+        data = await request.get_data()
+        data = data.decode("utf-8").strip()[:1024]
+        data = json.loads(data)
+    except:
+        return jsonify({"error": 500, "message": "internal server error"}), 500
+
+    if not isinstance(data, dict):
+        return jsonify({"error": 400, "message": "invalid body"}), 400
+
+    if "guild" in data:
+        if g.user.guild != data["guild"]:
+            if not g.user.has_perm("manage_all_guilds"):
+                return jsonify({"error": 403, "message": "forbidden guild"}), 403
+            if not isinstance(data["guild"], int):
+                return jsonify({"error": 400, "message": "invalid guild id"}), 400
+    else:
+        data["guild"] = g.user.guild
+
+    if "permissions" in data:
+        if not isinstance(data["permissions"], list):
+            return jsonify({"error": 400, "message": "invalid permissions"}), 400
+        for perm in data["permissions"]:
+            if not isinstance(perm, str) or not g.user.has_perm(perm):
+                return jsonify({"error": 403, "message": f"cannot grant {perm}"}), 403
+    else:
+        data["permissions"] = []
+
+    if "enabled" in data:
+        if not isinstance(data["enabled"], bool):
+            return jsonify({"error": 400, "message": "invalid enabled"}), 400
+    else:
+        data["enabled"] = True
+
+    # Always generate a new key
+    data["key"] = str(uuid.uuid4())
+
+    name = name.strip()
+    found = None
+    for user in User.ALL:
+        if user.name.lower() == name.lower():
+            found = user
+            break
+    if found is None:
+        found = User({
+            "name": name,
+            "permissions": data["permissions"],
+            "key": data["key"],
+            "guild": data["guild"],
+            "enabled": data["enabled"],
+        })
+        User.ALL.append(found)
+    else:
+        for perm in found.permissions:
+            if not g.user.has_perm(perm):
+                return jsonify({"error": 403, "message": "you cannot modify this user"}), 403
+        found.permissions = data["permissions"]
+        found.key = data["key"]
+        found.guild = data["guild"]
+        found.enabled = data["enabled"]
+    return jsonify({"success": True, "key": data["key"]})
+
 @app.post("/allowlist/<uuid>/<username>")
 @check_permissions("allowlist")
 @verify_uuid_username
 async def allowlist(uuid, username):
-    reason = await request.get_data()
-    reason = reason.decode("utf-8").strip()[:128]
+    try:
+        reason = await request.get_data()
+        reason = reason.decode("utf-8").strip()[:128]
+    except:
+        return jsonify({"error": 500, "message": "internal server error"}), 500
 
     if uuid in Player.ALL:
         player = Player.ALL[uuid]
