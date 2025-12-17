@@ -147,7 +147,7 @@ async def put_user(name):
         User.ALL.append(found)
 
         permstr = ", ".join(found.perms)
-        print(f"[GDA] New user created: Name: {name}, Perms: [{permstr}], Guild: {found.guild}, Enabled: {found.enabled} (by {g.user.name})")
+        print(f"[GDA] New user created: Name: {found.name}, Perms: [{permstr}], Guild: {found.guild}, Enabled: {found.enabled} (by {g.user.name})")
     else:
         if found.guild != g.user.guild and found.guild != -1:
             if not g.user.has_perm("manage_all_guilds"):
@@ -160,7 +160,7 @@ async def put_user(name):
         found.guild = data["guild"]
         found.enabled = data["enabled"]
         permstr = ", ".join(found.perms)
-        print(f"[GDA] User updated: Name: {name}, Perms: [{permstr}], Guild: {guild_id}, Enabled: {enabled_state} (by {g.user.name})")
+        print(f"[GDA] User updated: Name: {found.name}, Perms: [{permstr}], Guild: {found.guild}, Enabled: {found.enabled} (by {g.user.name})")
     return jsonify({"success": True, "key": data["key"]})
 
 @app.post("/allowlist/<uuid>/<username>")
