@@ -213,8 +213,8 @@ async def blocklist(uuid, username):
 
     player.infer_state = PlayerInferState.BLOCKLIST
     player.language = "unknown"
-    player.infer_reason = reason
-    print(f"[GDA] {uuid} ({username}): Added to block list: '{reason}' by {g.user.name}")
+    player.infer_reason = data.reason
+    print(f"[GDA] {uuid} ({username}): Added to block list: '{data.reason}' by {g.user.name}")
     return jsonify({"success": True})
 
 @app.route("/check/<uuid>/<username>")
