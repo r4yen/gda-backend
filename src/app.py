@@ -168,8 +168,9 @@ async def put_user(name):
 @verify_uuid_username
 async def allowlist(uuid, username):
     try:
-        reason = await request.get_data()
-        reason = reason.decode("utf-8").strip()[:128]
+        data = await request.get_data()
+        data = data.decode("utf-8").strip()[:1024]
+        data = json.loads(data)
     except:
         return jsonify({"error": 500, "message": "internal server error"}), 500
 
@@ -180,18 +181,25 @@ async def allowlist(uuid, username):
         player = Player(uuid, {"last_name": username})
         Player.ALL[uuid] = player
 
+    if (not data.overwrite and player.infer_state == PlayerInferState.ALLOWLIST) or (not data.overwrite and player.infer_state == PlayerInferState.BLOCKLIST):
+        return jsonify({"error": 405, "message": "User already listed"}), 405
+
     player.infer_state = PlayerInferState.ALLOWLIST
     player.language = "german"
-    player.infer_reason = reason
-    print(f"[GDA] {uuid} ({username}): Added to allow list: '{reason}' by {g.user.name}")
+    player.infer_reason = data.reason
+    print(f"[GDA] {uuid} ({username}): Added to allow list: '{data.reason}' by {g.user.name}")
     return jsonify({"success": True})
 
 @app.post("/blocklist/<uuid>/<username>")
 @check_permissions("blocklist")
 @verify_uuid_username
 async def blocklist(uuid, username):
-    reason = await request.get_data()
-    reason = reason.decode("utf-8").strip()[:128]
+    try:
+        data = await request.get_data()
+        data = data.decode("utf-8").strip()[:1024]
+        data = json.loads(data)
+    except:
+        return jsonify({"error": 500, "message": "internal server error"}), 500
 
     if uuid in Player.ALL:
         player = Player.ALL[uuid]
@@ -199,6 +207,9 @@ async def blocklist(uuid, username):
     else:
         player = Player(uuid, {"last_name": username})
         Player.ALL[uuid] = player
+
+    if not data.overwrite and (player.infer_state == PlayerInferState.ALLOWLIST or player.infer_state == PlayerInferState.BLOCKLIST):
+        return jsonify({"error": 405, "message": "User already listed"}), 405
 
     player.infer_state = PlayerInferState.BLOCKLIST
     player.language = "unknown"
